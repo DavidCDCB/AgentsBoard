@@ -1065,9 +1065,6 @@ body { display: flex; flex-direction: column; }
   color: #3ecf5a;
   background: rgba(62,207,90,0.1);
 }
-  color: #3ecf5a;
-  background: rgba(62,207,90,0.1);
-}
 
 .session-unread-btn:hover {
   color: #4fc3f7;
@@ -1254,7 +1251,7 @@ body { display: flex; flex-direction: column; }
 
 .terminal-container {
   position: absolute;
-  inset: 8px 20px 0 0;
+  inset: 0px 0px 0 0;
   display: none;
   padding: 0;
   overflow: hidden;
