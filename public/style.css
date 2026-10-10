@@ -1331,6 +1331,15 @@ body { display: flex; flex-direction: column; }
   background: rgba(255,255,255,0.15);
 }
 
+/* CLI sessions hide the scrollbar; the wheel still scrolls the scrollback. */
+.terminal-container.cli-session .xterm-viewport {
+  scrollbar-width: none;
+}
+
+.terminal-container.cli-session .xterm-viewport::-webkit-scrollbar {
+  display: none;
+}
+
 /* ========== TERMINAL SEARCH BAR ========== */
 .terminal-search-bar {
   position: absolute;
