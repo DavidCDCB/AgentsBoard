@@ -1301,7 +1301,12 @@ if (!gotSingleInstanceLock) {
 
   app.whenReady().then(() => {
     // Matches build.appId so Windows attributes notifications to AgentsBoard.
-    if (process.platform === 'win32') app.setAppUserModelId('ai.doctly.agentsboard');
+    // Dev runs use their own AUMID: Windows keys the taskbar icon on it, and a
+    // dev shortcut to node_modules\electron.exe would otherwise replace the
+    // packaged app's icon.
+    if (process.platform === 'win32') {
+      app.setAppUserModelId(app.isPackaged ? 'ai.doctly.agentsboard' : 'ai.doctly.agentsboard.dev');
+    }
     Menu.setApplicationMenu(null);
     createWindow();
     startProjectsWatcher();

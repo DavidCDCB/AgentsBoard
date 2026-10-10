@@ -133,6 +133,7 @@ Eventos hacia el renderer (`preload.js`): `onCliBusyState`, `onTerminalNotificat
 
 - La causa del icono ausente en el exe (y en la barra de tareas) es que `signAndEditExecutable=false` omite rcedit. Activarlo falla sin Modo de desarrollador de Windows, porque winCodeSign necesita symlinks.
 - La ventana usa `build/icon.ico` en Windows (`main.js` ~93). Usar `icon.png` ahí fue otra causa del problema.
+- Icono de Electron en la barra de tareas: Windows asocia el AUMID (`main.js` ~1304) con un acceso directo del menú Inicio. Encontramos un `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Electron.lnk` con el AUMID `ai.doctly.agentsboard` que apuntaba a `node_modules\electron\dist\electron.exe`, y por eso el portable mostraba el icono de Electron. Si vuelve a pasar, borra ese `.lnk`. Las ejecuciones dev usan el AUMID `ai.doctly.agentsboard.dev`, y con él no se recreó el acceso directo.
 
 ## 7. Build de portable e instalador (Windows)
 
