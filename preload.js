@@ -25,7 +25,6 @@ contextBridge.exposeInMainWorld('api', {
   // Settings
   getSetting: (key) => ipcRenderer.invoke('get-setting', key),
   setSetting: (key, value) => ipcRenderer.invoke('set-setting', key, value),
-  deleteSetting: (key) => ipcRenderer.invoke('delete-setting', key),
   getEffectiveSettings: () => ipcRenderer.invoke('get-effective-settings'),
   getShellProfiles: () => ipcRenderer.invoke('get-shell-profiles'),
 
@@ -74,9 +73,6 @@ contextBridge.exposeInMainWorld('api', {
 
   // Platform
   platform: process.platform,
-
-  // App version
-  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
 
   resolveTerminalFiles: (references, context) => ipcRenderer.invoke('resolve-terminal-files', references, context),
 });

@@ -15,7 +15,6 @@ const terminalStopBtn = document.getElementById('terminal-stop-btn');
 const runningToggle = document.getElementById('running-toggle');
 const todayToggle = document.getElementById('today-toggle');
 const loadingStatus = document.getElementById('loading-status');
-const sessionFilters = document.getElementById('session-filters');
 const searchBar = document.getElementById('search-bar');
 const terminalArea = document.getElementById('terminal-area');
 const settingsViewer = document.getElementById('settings-viewer');
@@ -949,11 +948,6 @@ async function launchNewSession(project, sessionOptions, { focus = true } = {}) 
   // any session, but does not take over whatever the user is looking at.
   if (focus) showSession(sessionId);
   pollActiveSessions();
-}
-
-// Legacy alias
-function openNewSession(project) {
-  return launchNewSession(project);
 }
 
 async function showTerminalHeader(session) {

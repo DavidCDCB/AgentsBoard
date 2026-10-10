@@ -283,7 +283,6 @@ const stmts = {
     INSERT INTO settings (key, value) VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
   `),
-  settingsDelete: db.prepare('DELETE FROM settings WHERE key = ?'),
   searchQuery: db.prepare(`
     SELECT search_map.id, snippet(search_fts, 1, '<mark>', '</mark>', '...', 40) as snippet
     FROM search_fts
@@ -481,10 +480,6 @@ function setSetting(key, value) {
   stmts.settingsUpsert.run(key, JSON.stringify(value));
 }
 
-function deleteSetting(key) {
-  stmts.settingsDelete.run(key);
-}
-
 function closeDb() {
   try { db.close(); } catch {}
 }
@@ -497,6 +492,6 @@ module.exports = {
   getFolderMeta, getAllFolderMeta, setFolderMeta,
   upsertSearchEntries, updateSearchTitle, deleteSearchSession, deleteSearchFolder, deleteSearchType,
   searchByType, searchSessionIds, isSearchIndexPopulated, searchFtsRecreated,
-  getSetting, setSetting, deleteSetting,
+  getSetting, setSetting,
   closeDb,
 };
