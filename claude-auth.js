@@ -6,14 +6,19 @@ const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { configDir, resolveConfigDir } = require('./harnesses/claude');
 
+// The CLI version this app was last checked against (AGENTS.md, section 11.1).
+const CLI_USER_AGENT = 'claude-code/2.1.296';
+
+// Same directory the transcripts live in, so credentials and sessions can't disagree.
 function getConfigDir() {
-  return (process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'));
+  return configDir();
 }
 
 function getKeychainServiceName() {
   const suffix = '-credentials';
-  if (process.env.CLAUDE_CONFIG_DIR) {
+  if (resolveConfigDir().custom) {
     const crypto = require('crypto');
     const hash = crypto.createHash('sha256').update(getConfigDir()).digest('hex').substring(0, 8);
     return `Claude Code${suffix}-${hash}`;
@@ -169,7 +174,7 @@ async function fetchUsage() {
     headers: {
       'Authorization': `Bearer ${oauth.accessToken}`,
       'Content-Type': 'application/json',
-      'User-Agent': 'claude-code/2.1.74',
+      'User-Agent': CLI_USER_AGENT,
       'anthropic-beta': 'oauth-2025-04-20',
     },
     signal: AbortSignal.timeout(10000),

@@ -33,8 +33,54 @@ const groupsByProject = true;
 
 // --- Layout ---
 
+// Claude Code keeps everything under its config directory: CLAUDE_CONFIG_DIR when
+// it is set, otherwise the same variable from the env block of the user settings
+// file, otherwise ~/.claude. Resolved the same way here, so the transcripts the
+// CLI writes are the ones indexed.
+const PROJECT_DIR_NAME_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const WINDOWS_DEVICE_NAME_RE = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+const SESSION_TRANSCRIPT_RE = /^[A-Za-z0-9_-]+\.jsonl$/;
+
+function cleanPath(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const p = value.trim();
+  if (p === '~') return os.homedir();
+  if (p.startsWith('~/') || p.startsWith('~\\')) return path.join(os.homedir(), p.slice(2));
+  return p;
+}
+
+let settingsEnvCache = { file: null, mtimeMs: -1, env: {} };
+
+/** The env block of ~/.claude/settings.json, re-read only when the file changes. */
+function userSettingsEnv() {
+  const file = path.join(os.homedir(), '.claude', 'settings.json');
+  let mtimeMs;
+  try { mtimeMs = fs.statSync(file).mtimeMs; } catch { return {}; }
+  if (settingsEnvCache.file === file && settingsEnvCache.mtimeMs === mtimeMs) return settingsEnvCache.env;
+  let env = {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (parsed && parsed.env && typeof parsed.env === 'object') env = parsed.env;
+  } catch {}
+  settingsEnvCache = { file, mtimeMs, env };
+  return env;
+}
+
+/** { dir, custom }: where the CLI keeps its state, and whether it was moved away from ~/.claude. */
+function resolveConfigDir() {
+  const fromEnv = cleanPath(process.env.CLAUDE_CONFIG_DIR);
+  if (fromEnv) return { dir: fromEnv, custom: true };
+  const fromSettings = cleanPath(userSettingsEnv().CLAUDE_CONFIG_DIR);
+  if (fromSettings) return { dir: fromSettings, custom: true };
+  return { dir: path.join(os.homedir(), '.claude'), custom: false };
+}
+
+function configDir() {
+  return resolveConfigDir().dir;
+}
+
 function sessionsRoot() {
-  return path.join(os.homedir(), '.claude', 'projects');
+  return path.join(configDir(), 'projects');
 }
 
 /**
@@ -66,16 +112,37 @@ function folderPath(folder) {
   return path.join(sessionsRoot(), folder);
 }
 
+/**
+ * CLAUDE_CODE_PROJECT_DIR_NAME names the project folder, for every project, but
+ * only when a config dir is set through the environment. Validated the way the
+ * CLI validates it; anything else is ignored.
+ */
+function projectDirNameOverride() {
+  if (!cleanPath(process.env.CLAUDE_CONFIG_DIR)) return null;
+  const name = process.env.CLAUDE_CODE_PROJECT_DIR_NAME;
+  if (!name || !PROJECT_DIR_NAME_RE.test(name) || WINDOWS_DEVICE_NAME_RE.test(name)) return null;
+  return name;
+}
+
 /** Which folder a project's sessions live in. */
 function folderForProject(projectPath) {
-  return encodeProjectPath(projectPath);
+  return projectDirNameOverride() || encodeProjectPath(projectPath);
+}
+
+/**
+ * A session transcript is named after its session id. Anything after the id
+ * (`<id>.orphaned-…jsonl`, `<id>.superseded-…`) is a copy the CLI set aside; it
+ * stays out of the CLI's own session picker, so it stays out of ours.
+ */
+function isSessionTranscript(fileName) {
+  return SESSION_TRANSCRIPT_RE.test(fileName);
 }
 
 /** Transcript files inside a folder directory, as absolute paths. */
 function listTranscripts(dir) {
   try {
     return fs.readdirSync(dir)
-      .filter(f => f.endsWith('.jsonl'))
+      .filter(isSessionTranscript)
       .map(f => path.join(dir, f));
   } catch {
     return [];
@@ -120,7 +187,7 @@ function deriveProjectPath(folderPath) {
     const entries = fs.readdirSync(folderPath, { withFileTypes: true });
     // Check direct .jsonl files first
     for (const e of entries) {
-      if (e.isFile() && e.name.endsWith('.jsonl')) {
+      if (e.isFile() && isSessionTranscript(e.name)) {
         const cwd = extractCwdFromJsonl(path.join(folderPath, e.name));
         if (cwd) return cwd;
       }
@@ -133,10 +200,10 @@ function deriveProjectPath(folderPath) {
         const subFiles = fs.readdirSync(subDir, { withFileTypes: true });
         for (const sf of subFiles) {
           let jsonlPath;
-          if (sf.isFile() && sf.name.endsWith('.jsonl')) {
+          if (sf.isFile() && isSessionTranscript(sf.name)) {
             jsonlPath = path.join(subDir, sf.name);
           } else if (sf.isDirectory() && sf.name === 'subagents') {
-            const agentFiles = fs.readdirSync(path.join(subDir, 'subagents')).filter(f => f.endsWith('.jsonl'));
+            const agentFiles = fs.readdirSync(path.join(subDir, 'subagents')).filter(isSessionTranscript);
             if (agentFiles.length > 0) jsonlPath = path.join(subDir, 'subagents', agentFiles[0]);
           }
           if (jsonlPath) {
@@ -244,7 +311,7 @@ function hashHead(fd, stat) {
 /** Accumulator. Every field is either a first-occurrence or a running total,
  *  which is what makes resuming mid-file valid. */
 function emptyState() {
-  return { summary: '', messageCount: 0, textParts: [], slug: null, customTitle: null, aiTitle: null, firstTimestamp: null, lastTimestamp: null };
+  return { summary: '', messageCount: 0, textParts: [], slug: null, cwd: null, customTitle: null, aiTitle: null, firstTimestamp: null, lastTimestamp: null };
 }
 
 function stateFrom(prev) {
@@ -253,6 +320,8 @@ function stateFrom(prev) {
     messageCount: prev.messageCount || 0,
     textParts: prev.textContent ? [prev.textContent] : [],
     slug: prev.slug || null,
+    // A resumed accumulator keeps the cwd it already found; the row stores it as projectPath.
+    cwd: prev.projectPath || null,
     customTitle: prev.customTitle || null,
     aiTitle: prev.aiTitle || null,
     firstTimestamp: prev.firstTimestamp || null,
@@ -270,6 +339,10 @@ function applyLine(line, st) {
   }
 
   if (entry.slug && !st.slug) st.slug = entry.slug;
+  // The project is the directory the transcript was written from, which is not
+  // always the folder's: a shared folder (CLAUDE_CODE_PROJECT_DIR_NAME, or two
+  // paths that differ only in punctuation) holds several projects.
+  if (!st.cwd && typeof entry.cwd === 'string' && entry.cwd) st.cwd = entry.cwd;
   if (entry.type === 'custom-title' && entry.customTitle) st.customTitle = entry.customTitle;
   if (entry.type === 'ai-title' && entry.aiTitle) st.aiTitle = entry.aiTitle;
 
@@ -331,7 +404,7 @@ function readSessionFile(filePath, folder, projectPath, prev = null) {
     if (after.size < stat.size || (after.size === stat.size && after.mtimeMs !== stat.mtimeMs)) return null;
     if (!st.summary || st.messageCount < 1) return null;
     return {
-      sessionId, folder, projectPath, runtime: id, sessionFile: filePath,
+      sessionId, folder, projectPath: st.cwd || projectPath, runtime: id, sessionFile: filePath,
       summary: st.summary, firstPrompt: st.summary,
       created: st.firstTimestamp || stat.birthtime.toISOString(),
       modified: st.lastTimestamp || fileMtime,
@@ -474,7 +547,8 @@ function buildLaunchArgs({ sessionId, isNew, options }) {
 
 module.exports = {
   id, label, binary, folderPrefix, groupsByProject,
-  available, sessionsRoot, listFolders, folderPath, folderForProject,
+  available, configDir, resolveConfigDir, sessionsRoot, listFolders, folderPath,
+  folderForProject, projectDirNameOverride, isSessionTranscript,
   listTranscripts, sessionIdFromPath, transcriptPath,
   deriveProjectPath,
   readSessionFile, toViewerEntries,

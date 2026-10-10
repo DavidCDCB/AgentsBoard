@@ -1251,7 +1251,7 @@ body { display: flex; flex-direction: column; }
 
 .terminal-container {
   position: absolute;
-  inset: 0px 0px 0 0;
+  inset: 0px 20px 0 0;
   display: none;
   padding: 0;
   overflow: hidden;
