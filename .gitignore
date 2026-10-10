@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.db
+*.db-wal
+*.db-shm
+.DS_Store
+.idea/
+*.pem
+.env
+.cache/
+dev-app-update.yml

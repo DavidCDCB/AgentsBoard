@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentsBoard</title>
+  <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app-container">
+  <div id="sidebar">
+    <button id="sidebar-expand-btn" title="Mostrar barra lateral"></button>
+    <div id="sidebar-header">
+      <div id="session-filters">
+        <button id="running-toggle" title="Mostrar solo en ejecución"></button>
+                <button id="star-toggle" title="Mostrar solo fijadas"></button>
+                <button id="today-toggle" title="Mostrar solo sesiones de hoy"></button>
+        <button id="archive-toggle" title="Mostrar sesiones archivadas"></button>
+        <span id="loading-status" style="display:none;"></span>
+                <button id="resort-btn" title="Reordenar sesiones"></button>
+        <button id="add-project-btn" title="Agregar directorio"></button>
+      </div>
+    </div>
+    <div id="search-bar">
+      <input id="search-input" type="text"       placeholder="Buscar sesiones..." />
+            <button id="search-clear" type="button"             aria-label="Limpiar búsqueda"></button>
+                        <button id="search-titles-toggle" type="button" title="Buscar solo en títulos" aria-label="Buscar solo en títulos"></button>
+    </div>
+    <div id="sidebar-content"></div>
+    <div id="sidebar-footer">
+      <button id="global-settings-btn" title="Configuración global"></button>
+      <button id="sidebar-collapse-btn" title="Ocultar barra lateral"></button>
+    </div>
+  </div>
+  <div id="sidebar-resize-handle"></div>
+  <div id="main">
+    <div id="placeholder">
+      <p>Selecciona una sesión de la barra lateral para comenzar.</p>
+    </div>
+    <div id="settings-viewer" style="display:none;">
+      <div id="settings-viewer-header">
+        <span id="settings-viewer-title">Configuración</span>
+      </div>
+      <div id="settings-viewer-body"></div>
+    </div>
+    <div id="jsonl-viewer" style="display:none;">
+      <div id="jsonl-viewer-header">
+        <span id="jsonl-viewer-title">Historial de mensajes</span>
+        <span id="jsonl-viewer-session-id"></span>
+      </div>
+      <div id="jsonl-viewer-body"></div>
+    </div>
+    <div id="terminal-area">
+      <div id="terminal-header" style="display:none;">
+        <div id="terminal-header-info">
+          <span id="terminal-header-name"></span>
+          <span id="terminal-header-pty-title" style="display:none;"></span>
+          <span id="terminal-header-id"></span>
+          <span id="terminal-header-shell" style="display:none;"></span>
+        </div>
+        <div id="terminal-header-controls">
+          <span id="terminal-header-status"></span>
+          <button id="terminal-stop-btn" title="Detener proceso"></button>
+        </div>
+      </div>
+      <div id="grid-viewer" style="display:none;">
+        <div id="grid-viewer-header">
+          <span id="grid-viewer-title">Vista general de sesiones</span>
+          <span id="grid-viewer-count"></span>
+        </div>
+      </div>
+      <div id="terminals"></div>
+    </div>
+  </div>
+  </div><!-- /app-container -->
+  <div id="status-bar"><span id="status-bar-info"></span><div id="status-bar-right"><span id="status-bar-quota" style="display:none;"><span class="quota-track"><span class="quota-fill"></span></span><span class="quota-pct"></span></span><span id="status-bar-activity"></span><a id="status-bar-repo" href="https://github.com/DavidCDCB/AgentsBoard" title="Abrir el repositorio en GitHub">GitHub</a></div></div>
+  <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
+  <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="../node_modules/@xterm/addon-web-links/lib/addon-web-links.js"></script>
+  <script src="../node_modules/@xterm/addon-search/lib/addon-search.js"></script>
+  <script src="../node_modules/@xterm/addon-unicode-graphemes/lib/addon-unicode-graphemes.js"></script>
+  <script src="../node_modules/@xterm/addon-webgl/lib/addon-webgl.js"></script>
+  <script src="../node_modules/morphdom/dist/morphdom-umd.js"></script>
+  <script src="icons.js"></script>
+  <script src="settings-panel.js"></script>
+  <script src="session-config.js"></script>
+  <script src="session-config-form.js"></script>
+  <script src="utils.js"></script>
+  <script src="context-menu.js"></script>
+  <script src="terminal-themes.js"></script>
+  <script src="terminal-links.js"></script>
+  <script src="terminal-manager.js"></script>
+  <script src="grid-view.js"></script>
+  <script src="message-search.js"></script>
+  <script src="jsonl-viewer.js"></script>
+  <script src="dialogs.js"></script>
+  <script src="sidebar.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
