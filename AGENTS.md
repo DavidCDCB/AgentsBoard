@@ -48,7 +48,7 @@ Tres capas de Electron más un worker y los harnesses:
 
 | Archivo | Responsabilidad |
 |---|---|
-| `main.js` | Proceso principal, IPC, PTY, notificaciones (~líneas 928-948), instancia única (~1289). |
+| `main.js` | Proceso principal, IPC, PTY, notificaciones (~líneas 953-977), instancia única (~1281). |
 | `preload.js` | Puente `window.api`. |
 | `db.js` | Esquema SQLite, tablas, migraciones y ajustes. |
 | `session-cache.js` | Indexado de sesiones, `buildProjectsFromCache` (~270-395), agregar y quitar directorios (~421, ~430). |
@@ -71,7 +71,7 @@ Tres capas de Electron más un worker y los harnesses:
 |---|---|
 | `index.html` | Marcado, orden de scripts y barra de estado (`#status-bar-right`, enlace `#status-bar-repo`). |
 | `style.css` | Estilos, incluido el anillo de sesión ocupada (`.terminal-container.cli-busy::after`). |
-| `app.js` | Orquestación. `setActivity` (~195-230), `renderDefaultStatus`, clic en el enlace de GitHub (~1258). |
+| `app.js` | Orquestación. `setActivity` (~194-230), `renderDefaultStatus`, clic en el enlace de GitHub (~1247). |
 | `sidebar.js` | Barra lateral: proyectos, sesiones, botones de agregar y quitar directorio. |
 | `terminal-manager.js` | Terminales embebidas. Sincronización `cli-busy` (~390-400) y `persistedTerminalRecord` (~291-306). |
 | `grid-view.js` | Vista en cuadrícula de sesiones. |
@@ -80,17 +80,14 @@ Tres capas de Electron más un worker y los harnesses:
 | `jsonl-viewer.js`, `message-search.js` | Visor de transcripciones y búsqueda en mensajes. |
 | `terminal-links.js`, `terminal-themes.js` | Enlaces y temas de la terminal. |
 | `icons.js`, `utils.js` | Utilidades e iconos. |
-| `icon.png` | Icono de la UI. |
 
 ### Otras carpetas
 
 - `harnesses/`: `index.js`, `claude.js`, `codex.js`.
 - `workers/`: `scan-projects.js`.
 - `test/`: 22 archivos `*.test.js` ejecutados con `node --test`.
-- `scripts/`: `postinstall.js`, `generate-icons.js`, `generate-dmg-background.js`, `apply-theme.ps1`.
-- `build/`: `icon.ico` (icono de la app y del exe), `icon.png`, `icons/` (iconos Linux y mac), `entitlements.mac.plist`, capturas (`screenshot*.png`, `project-view-*.png`). Las capturas son de la UI antigua de Switchboard.
-- `docs/customizing-colors.md`: guía de colores, escrita en francés.
-- `templates/`: plantillas de Switchboard (customer, feature, research). Ningún código las usa.
+- `scripts/`: `postinstall.js`, `generate-icons.js`, `generate-dmg-background.js`.
+- `build/`: `icon.ico` (icono de la app y del exe), `icon.png`, `icons/` (iconos Linux y mac), `entitlements.mac.plist`.
 - `.github/workflows/build.yml`: CI en tags `v*` y en PRs a `main`.
 - `.claude/commands/release.md`: flujo de release (bump, tag, CI, release en borrador y confirmación).
 
@@ -98,11 +95,11 @@ Tres capas de Electron más un worker y los harnesses:
 
 Canales de `ipcMain.handle`/`ipcMain.on` en `main.js`:
 
-- Sistema: `get-app-version`, `open-external`, `open-path`, `clipboard-write-text`, `browse-folder`.
+- Sistema: `open-external`, `open-path`, `clipboard-write-text`, `browse-folder`.
 - Proyectos: `get-projects`, `add-project`, `remove-project`.
 - Uso y cuota: `get-usage`, `get-codex-usage`.
 - Búsqueda: `search`, `search-session-ids`.
-- Ajustes: `get-setting`, `set-setting`, `delete-setting`, `get-effective-settings`.
+- Ajustes: `get-setting`, `set-setting`, `get-effective-settings`.
 - Harnesses y perfiles: `get-harnesses`, `get-codex-models`, `get-shell-profiles`.
 - Sesiones: `get-active-sessions`, `stop-session`, `toggle-star`, `rename-session`, `archive-session`, `read-session-jsonl`, `get-session-last-message`.
 - Terminales: `get-active-terminals`, `open-terminal`, `terminal-input`, `terminal-resize`, `close-terminal`, `set-active-terminal`, `resolve-terminal-files`.
@@ -113,14 +110,14 @@ Eventos hacia el renderer (`preload.js`): `onCliBusyState`, `onTerminalNotificat
 
 ### Sesión ocupada y notificaciones
 
-- Una sesión está ocupada cuando la CLI muestra su spinner en el título OSC 0 (`onCliBusyState`). Los eventos `onTerminalNotification` de tipo `'idle'` la marcan como libre. Ambos llaman a `setActivity` en `app.js` (~195-230). `terminal-activity.js` es un respaldo basado en marcas OSC 133 o en el proceso en primer plano.
-- El anillo animado de la terminal (`.terminal-container.cli-busy::after`, `style.css` ~1436-1475) gira el tono con `--terminal-ring-hue`, en un ciclo de 8 s entre 190 y 300.
+- Una sesión está ocupada cuando la CLI muestra su spinner en el título OSC 0 (`onCliBusyState`). Los eventos `onTerminalNotification` de tipo `'idle'` la marcan como libre. Ambos llaman a `setActivity` en `app.js` (~194-230). `terminal-activity.js` es un respaldo basado en marcas OSC 133 o en el proceso en primer plano.
+- El anillo animado de la terminal (`.terminal-container.cli-busy::after`, `style.css` ~1410-1445) gira el tono con `--terminal-ring-hue`, en un ciclo de 8 s entre 190 y 300.
 - Al pasar de ocupada a libre, la sesión se reordena automáticamente en la barra lateral.
-- Notificación del sistema (`main.js` ~928-948): se muestra en la transición ocupada→libre. Se suprime solo si la ventana tiene foco **y** la sesión que terminó es la activa.
+- Notificación del sistema (`main.js` ~953-977): se muestra en la transición ocupada→libre. Se suprime solo si la ventana tiene foco **y** la sesión que terminó es la activa.
 
 ### Renombrar sesiones
 
-- `rename-session` (`main.js` ~477) guarda el nombre en `session_meta`.
+- `rename-session` (`main.js` ~480) guarda el nombre en `session_meta`.
 - Al reabrir, `persistedTerminalRecord` (`terminal-manager.js` ~291-306) recupera ese nombre. Antes se perdía y aparecía "Terminal".
 - Un nombre puesto en la app tiene prioridad sobre el título automático de Codex, que llega por `session_index.jsonl` (`session-cache.js` ~66-68).
 
@@ -133,7 +130,7 @@ Eventos hacia el renderer (`preload.js`): `onCliBusyState`, `onTerminalNotificat
 
 - La causa del icono ausente en el exe (y en la barra de tareas) es que `signAndEditExecutable=false` omite rcedit. Activarlo falla sin Modo de desarrollador de Windows, porque winCodeSign necesita symlinks.
 - La ventana usa `build/icon.ico` en Windows (`main.js` ~93). Usar `icon.png` ahí fue otra causa del problema.
-- Icono de Electron en la barra de tareas: Windows asocia el AUMID (`main.js` ~1304) con un acceso directo del menú Inicio. Encontramos un `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Electron.lnk` con el AUMID `ai.doctly.agentsboard` que apuntaba a `node_modules\electron\dist\electron.exe`, y por eso el portable mostraba el icono de Electron. Si vuelve a pasar, borra ese `.lnk`. Las ejecuciones dev usan el AUMID `ai.doctly.agentsboard.dev`, y con él no se recreó el acceso directo.
+- Icono de Electron en la barra de tareas: Windows asocia el AUMID (`main.js` ~1300) con un acceso directo del menú Inicio. Encontramos un `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Electron.lnk` con el AUMID `ai.doctly.agentsboard` que apuntaba a `node_modules\electron\dist\electron.exe`, y por eso el portable mostraba el icono de Electron. Si vuelve a pasar, borra ese `.lnk`. Las ejecuciones dev usan el AUMID `ai.doctly.agentsboard.dev`, y con él no se recreó el acceso directo.
 
 ## 7. Build de portable e instalador (Windows)
 
@@ -191,9 +188,6 @@ Pasos verificados. Los artefactos quedan en `dist\`, que está en `.gitignore`.
 - Incompatibilidad de versión de Node: `engines` pide >=22.12 y el entorno original usó 22.11.0.
 - 26 vulnerabilidades de `npm audit` sin resolver.
 - `package.json` (`build.publish`) apunta a `doctly/switchboard`, y `author` es "Doctly". El workflow de CI publica un release en borrador con `gh release create` en tags `v*`. Revisar antes de publicar desde este repositorio.
-- `templates/` no tiene uso. Puede eliminarse.
-- `build/screenshot*.png` y `project-view-*.png` muestran la UI antigua de Switchboard.
-- `docs/customizing-colors.md` está en francés.
 - Comentario desactualizado en `session-cache.js:8` ("Only Claude sessions are indexed today"). Codex ya se indexa cuando `available()` lo permite (`harnesses/index.js`, `harnesses/codex.js:107`).
 - La regla de quitar directorios no se valida en el backend (sección 6).
 - Las notificaciones y el anillo ocupado no se han verificado con una sesión real de Claude.

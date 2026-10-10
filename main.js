@@ -45,7 +45,7 @@ const {
   getAllFolderMeta, setFolderMeta,
   upsertSearchEntries, updateSearchTitle, deleteSearchSession, deleteSearchFolder,
   searchByType, isSearchIndexPopulated, searchFtsRecreated,
-  getSetting, setSetting, deleteSetting,
+  getSetting, setSetting,
   closeDb,
 } = require('./db');
 const dbModule = require('./db');
@@ -374,11 +374,6 @@ ipcMain.handle('set-setting', (_event, key, value) => {
       }
     }
   }
-  return { ok: true };
-});
-
-ipcMain.handle('delete-setting', (_event, key) => {
-  deleteSetting(key);
   return { ok: true };
 });
 
@@ -1275,9 +1270,6 @@ function startHarnessWatchers() {
     }
   }
 }
-
-// --- IPC: app version ---
-ipcMain.handle('get-app-version', () => app.getVersion());
 
 // --- App lifecycle ---
 // Prevent a second Electron instance from killing active PTY sessions.
