@@ -4,7 +4,7 @@
 //
 // Depends on globals from app.js: openSessions, activeSessionId, sessionMap, activePtyIds,
 // sortedOrder, sidebarContent, terminalsEl, gridViewActive, gridViewer, gridViewerCount,
-// placeholder, terminalHeader, settingsViewer,
+// placeholder, settingsViewer,
 // jsonlViewer, terminalArea, cachedProjects, isMac
 // Depends on: cleanDisplayName, formatDate (utils.js), fitAndScroll, showSession (terminal-manager.js)
 
@@ -172,7 +172,6 @@ function showGridView() {
   gridViewActive = true;
   localStorage.setItem('gridViewActive', '1');
   placeholder.style.display = 'none';
-  terminalHeader.style.display = 'none';
 
   // Hide other viewers but keep terminal-area visible
   settingsViewer.style.display = 'none';
@@ -286,7 +285,6 @@ function toggleGridView() {
       placeholder.style.display = '';
     }
   } else {
-    terminalHeader.style.display = 'none';
     showGridView();
   }
 }

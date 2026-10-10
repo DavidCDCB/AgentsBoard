@@ -6,12 +6,6 @@ const placeholder = document.getElementById('placeholder');
 const archiveToggle = document.getElementById('archive-toggle');
 const starToggle = document.getElementById('star-toggle');
 const searchInput = document.getElementById('search-input');
-const terminalHeader = document.getElementById('terminal-header');
-const terminalHeaderName = document.getElementById('terminal-header-name');
-const terminalHeaderId = document.getElementById('terminal-header-id');
-const terminalHeaderStatus = document.getElementById('terminal-header-status');
-const terminalHeaderShell = document.getElementById('terminal-header-shell');
-const terminalStopBtn = document.getElementById('terminal-stop-btn');
 const runningToggle = document.getElementById('running-toggle');
 const todayToggle = document.getElementById('today-toggle');
 const loadingStatus = document.getElementById('loading-status');
@@ -41,7 +35,6 @@ todayToggle.innerHTML = ICONS.calendar(16);
 archiveToggle.innerHTML = ICONS.archive(16);
 resortBtn.innerHTML = ICONS.sort(16);
 addProjectBtn.innerHTML = ICONS.folderPlus(16);
-terminalStopBtn.innerHTML = ICONS.stop(12);
 
 // Map<sessionId, { terminal, element, fitAddon, session, closed }>
 const openSessions = new Map();
@@ -309,8 +302,6 @@ window.api.onSessionDetected((tempId, realId) => {
   sessionMap.delete(tempId);
   sessionMap.set(realId, entry.session);
 
-  terminalHeaderId.textContent = realId;
-
   // Refresh sidebar to show the new session, then select it
   loadProjects().then(() => {
     const item = document.querySelector(`[data-session-id="${realId}"]`);
@@ -344,15 +335,11 @@ window.api.onSessionForked((oldId, newId) => {
   sessionMap.delete(oldId);
   sessionMap.set(newId, entry.session);
 
-  terminalHeaderId.textContent = newId;
-
   loadProjects().then(() => {
     const item = document.querySelector(`[data-session-id="${newId}"]`);
     if (item) {
       document.querySelectorAll('.session-item.active').forEach(el => el.classList.remove('active'));
       item.classList.add('active');
-      const summary = item.querySelector('.session-summary');
-      if (summary) terminalHeaderName.textContent = summary.textContent;
     }
   });
   pollActiveSessions();
@@ -397,7 +384,6 @@ window.api.onProcessExited((sessionId, exitCode, signal, userStopped) => {
     gridViewerCount.textContent = gridCards.size + (gridCards.size !== 1 ? ' sesiones' : ' sesión');
   } else if (activeSessionId === sessionId) {
     setActiveSession(null);
-    terminalHeader.style.display = 'none';
     placeholder.style.display = '';
   }
 
@@ -438,12 +424,6 @@ window.api.onTerminalNotification((sessionId, message, kind) => {
     // Active sessions are already being viewed, so they only need to go idle.
     setActivity(sessionId, false);
     if (sessionId !== activeSessionId) markUnread(sessionId);
-  }
-
-  // Show in header if active
-  if (sessionId === activeSessionId && terminalHeaderPtyTitle) {
-    terminalHeaderPtyTitle.textContent = message;
-    terminalHeaderPtyTitle.style.display = '';
   }
 });
 
@@ -633,7 +613,6 @@ function dismissSession(sessionId) {
   }
   if (activeSessionId === sessionId) {
     setActiveSession(null);
-    terminalHeader.style.display = 'none';
     placeholder.style.display = '';
   }
   attentionSessions.delete(sessionId);
@@ -647,17 +626,10 @@ async function confirmAndStopSession(sessionId) {
   activePtyIds.delete(sessionId);
   if (!gridViewActive && activeSessionId === sessionId) {
     setActiveSession(null);
-    terminalHeader.style.display = 'none';
     placeholder.style.display = '';
   }
   refreshSidebar();
 }
-
-// --- Terminal header controls ---
-terminalStopBtn.addEventListener('click', () => {
-  if (activeSessionId) confirmAndStopSession(activeSessionId);
-});
-
 
 // --- Poll for active PTY sessions ---
 // Adaptive cadence: poll fast (3s) only while PTYs are running; when idle, back
@@ -688,7 +660,6 @@ async function pollActiveSessions() {
     }
     activePtyIds = new Set(ids);
     updateRunningIndicators();
-    updateTerminalHeader();
   } catch {}
   scheduleActiveSessionsPoll();
 }
@@ -725,25 +696,6 @@ function updateRunningIndicators() {
     const stopBtn = card.querySelector('.grid-card-stop-btn');
     if (stopBtn) stopBtn.style.display = running ? '' : 'none';
   }
-}
-
-function updateTerminalHeader() {
-  if (!activeSessionId) return;
-  const running = activePtyIds.has(activeSessionId);
-  terminalHeaderStatus.className = running ? 'running' : 'stopped';
-  terminalHeaderStatus.textContent = running ? 'En ejecución' : 'Detenida';
-  terminalStopBtn.style.display = running ? '' : 'none';
-  updatePtyTitle();
-}
-
-const terminalHeaderPtyTitle = document.getElementById('terminal-header-pty-title');
-
-function updatePtyTitle() {
-  if (!activeSessionId || !terminalHeaderPtyTitle) return;
-  const entry = openSessions.get(activeSessionId);
-  const title = entry?.ptyTitle || '';
-  terminalHeaderPtyTitle.textContent = title;
-  terminalHeaderPtyTitle.style.display = title ? '' : 'none';
 }
 
 scheduleActiveSessionsPoll();
@@ -948,30 +900,6 @@ async function launchNewSession(project, sessionOptions, { focus = true } = {}) 
   // any session, but does not take over whatever the user is looking at.
   if (focus) showSession(sessionId);
   pollActiveSessions();
-}
-
-async function showTerminalHeader(session) {
-  const displayName = cleanDisplayName(session.name || session.aiTitle || session.summary);
-  terminalHeaderName.textContent = displayName;
-  terminalHeaderId.textContent = session.sessionId;
-  terminalHeader.style.display = '';
-  updateTerminalHeader();
-
-  // Show active shell profile
-  try {
-    const effective = await window.api.getEffectiveSettings(session.projectPath);
-    const profileId = effective.shellProfile || 'auto';
-    if (profileId === 'auto') {
-      terminalHeaderShell.style.display = 'none';
-    } else {
-      const profiles = await window.api.getShellProfiles();
-      const profile = profiles.find(p => p.id === profileId);
-      terminalHeaderShell.textContent = profile ? profile.name : profileId;
-      terminalHeaderShell.style.display = '';
-    }
-  } catch {
-    terminalHeaderShell.style.display = 'none';
-  }
 }
 
 // Terminal lifecycle (createTerminalEntry, destroySession, showSession, setupDragAndDrop) → terminal-manager.js

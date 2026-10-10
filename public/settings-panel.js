@@ -9,14 +9,12 @@
   function closeSettingsViewer() {
     settingsViewer.style.display = 'none';
     const terminalArea = document.getElementById('terminal-area');
-    const terminalHeader = document.getElementById('terminal-header');
     const placeholder = document.getElementById('placeholder');
     const gridViewActive = localStorage.getItem('gridViewActive') === '1';
     const activeSessionId = sessionStorage.getItem('activeSessionId') || null;
     // Check if there's an active session with an open terminal
     if (activeSessionId && window._openSessions && window._openSessions.has(activeSessionId)) {
       terminalArea.style.display = '';
-      terminalHeader.style.display = '';
     } else if (gridViewActive) {
       terminalArea.style.display = '';
     } else {

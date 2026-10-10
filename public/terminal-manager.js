@@ -2,7 +2,7 @@
 // Key bindings, write buffering, xterm instance lifecycle, drag-and-drop.
 //
 // Depends on globals: openSessions, activeSessionId, TERMINAL_THEME, terminalsEl,
-// gridViewActive, gridCards, gridViewerCount, placeholder, terminalHeader,
+// gridViewActive, gridCards, gridViewerCount, placeholder,
 // sessionMap, activePtyIds (app.js)
 // Depends on: toggleGridView, isSessionNavKey, handleSessionNavKey, focusGridCard,
 // wrapInGridCard, showGridView (grid-view.js)
@@ -587,10 +587,6 @@ function createTerminalEntry(session) {
   terminal.onResize(({ cols, rows }) => {
     window.api.resizeTerminal(entry.session.sessionId, cols, rows);
   });
-  terminal.onTitleChange(title => {
-    entry.ptyTitle = title;
-    if (activeSessionId === entry.session.sessionId) updatePtyTitle();
-  });
   return entry;
 }
 
@@ -637,10 +633,9 @@ if (typeof window !== 'undefined') {
 }
 
 // Make a session visible in the current view mode (grid or single).
-// Handles sidebar highlight, notifications, header, fit, and focus.
+// Handles sidebar highlight, notifications, fit, and focus.
 function showSession(sessionId) {
   const entry = openSessions.get(sessionId);
-  const session = sessionMap.get(sessionId) || (entry && entry.session);
   // Update sidebar active state
   document.querySelectorAll('.session-item.active').forEach(el => el.classList.remove('active'));
   const item = document.querySelector(`[data-session-id="${sessionId}"]`);
@@ -668,7 +663,6 @@ function showSession(sessionId) {
     document.querySelectorAll('.terminal-container').forEach(el => el.classList.remove('visible'));
     placeholder.style.display = 'none';
     hideAllViewers();
-    if (session) showTerminalHeader(session);
       if (entry) {
         entry.element.classList.add('visible');
         entry.terminal.focus();
