@@ -495,6 +495,10 @@ function createTerminalEntry(session) {
     console.warn('[terminal] WebGL addon failed, falling back to DOM renderer', e);
   }
 
+  // Clicking forces a full repaint: rows xterm left stale during synchronized
+  // (DEC 2026) output redraw as soon as the user interacts with them.
+  container.addEventListener('mousedown', () => terminal.refresh(0, terminal.rows - 1), { passive: true });
+
   // --- Terminal search bar (Cmd/Ctrl+F) ---
   const searchBar = document.createElement('div');
   searchBar.className = 'terminal-search-bar';
