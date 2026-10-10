@@ -31,6 +31,8 @@ npm test
 
 El build estándar falla al reconstruir `node-pty`, así que se usan estos pasos. Los artefactos quedan en `dist\`.
 
+Atajo para el instalador: `powershell -ExecutionPolicy Bypass -File scripts\build-installer.ps1` ejecuta los pasos 1, 2 y 4 de abajo. El portable (paso 3) se genera manualmente.
+
 1. Empaquetar sin reconstruir nativos ni firmar:
 
    ```powershell

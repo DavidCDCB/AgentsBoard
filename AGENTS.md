@@ -136,6 +136,8 @@ Eventos hacia el renderer (`preload.js`): `onCliBusyState`, `onTerminalNotificat
 
 Pasos verificados. Los artefactos quedan en `dist\`, que está en `.gitignore`.
 
+Atajo para el instalador: `powershell -ExecutionPolicy Bypass -File scripts\build-installer.ps1`. Ejecuta los pasos 1, 2 y 4 y muestra la ruta del instalador. El portable (paso 3) sigue siendo manual.
+
 1. **Empaquetar sin reconstruir node-pty ni firmar:**
    ```powershell
    npx electron-builder --dir --win --config.npmRebuild=false --config.win.signAndEditExecutable=false
