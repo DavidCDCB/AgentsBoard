@@ -1512,6 +1512,11 @@ body { display: flex; flex-direction: column; }
 #terminals.grid-layout::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
 #terminals.grid-layout::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
 
+/* Hide the grid bar only when every card is a CLI session; overflow still scrolls. */
+#terminals.grid-layout:not(:has(.terminal-container:not(.cli-session))) {
+  scrollbar-width: none;
+}
+
 /* Grid project group heading */
 .grid-project-heading {
   grid-column: 1 / -1;
