@@ -1308,35 +1308,17 @@ body { display: flex; flex-direction: column; }
   }
 }
 
-/* Prevent terminal content from rendering under xterm's scrollbar */
+/* Terminal scrollbars are hidden in every session; the wheel still scrolls the scrollback. */
 .terminal-container .xterm-viewport {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
-}
-
-.terminal-container .xterm-viewport::-webkit-scrollbar {
-  width: 8px;
-}
-
-.terminal-container .xterm-viewport::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.terminal-container .xterm-viewport::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.08);
-  border-radius: 4px;
-}
-
-.terminal-container .xterm-viewport::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.15);
-}
-
-/* CLI sessions hide the scrollbar; the wheel still scrolls the scrollback. */
-.terminal-container.cli-session .xterm-viewport {
   scrollbar-width: none;
 }
 
-.terminal-container.cli-session .xterm-viewport::-webkit-scrollbar {
+.terminal-container .xterm-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+/* xterm 6 draws its own overlay bar beside the viewport; hide that one too. */
+.terminal-container .xterm-scrollable-element > .scrollbar {
   display: none;
 }
 
@@ -1505,19 +1487,11 @@ body { display: flex; flex-direction: column; }
   padding: 14px 20px 14px 14px;
   overflow-y: scroll;
   align-content: start;
-}
-
-#terminals.grid-layout::-webkit-scrollbar { width: 8px; }
-#terminals.grid-layout::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
-#terminals.grid-layout::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
-#terminals.grid-layout::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
-
-/* Claude/Codex TUIs scroll themselves, so the grid bar is hidden when any card is a CLI session. Overflow still scrolls. */
-#terminals.grid-layout:has(.cli-session) {
+  /* The grid scrolls with the wheel but never shows a bar. */
   scrollbar-width: none;
 }
 
-#terminals.grid-layout:has(.cli-session)::-webkit-scrollbar {
+#terminals.grid-layout::-webkit-scrollbar {
   display: none;
 }
 

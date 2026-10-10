@@ -81,7 +81,7 @@ Tres capas de Electron más un worker y los harnesses:
 | `style.css` | Estilos, incluido el anillo de sesión ocupada (`.terminal-container.cli-busy::after`). |
 | `app.js` | Orquestación. `setActivity` (187-220), `renderDefaultStatus` (1152), enlace de GitHub `status-bar-repo` (1175), `confirmAndStopSession` (623). |
 | `sidebar.js` | Barra lateral: proyectos, sesiones, botones de agregar y quitar directorio, y detener sesión. |
-| `terminal-manager.js` | Terminales embebidas. `createTerminalEntry` (~393), sincronización `cli-busy` y `cli-session` (397-398), `persistedTerminalRecord` (291) y repintado al hacer clic (500). |
+| `terminal-manager.js` | Terminales embebidas. `createTerminalEntry` (~393), sincronización de `cli-busy` (~397), `persistedTerminalRecord` (291) y repintado al hacer clic (500). |
 | `grid-view.js` | Vista en cuadrícula de sesiones. |
 | `settings-panel.js`, `dialogs.js`, `context-menu.js` | Ajustes, diálogos y menús contextuales. |
 | `session-config.js`, `session-config-form.js` | Configuración de nueva sesión. |
@@ -121,7 +121,7 @@ Eventos hacia el renderer (`preload.js`, métodos `on*`): `onTerminalData`, `onS
 
 - Una sesión está ocupada cuando la CLI muestra su spinner en el título OSC 0 (`onCliBusyState`). Los eventos `onTerminalNotification` de tipo `'idle'` la marcan como libre. Ambos llaman a `setActivity` en `app.js` (187-220). `terminal-activity.js` es un respaldo basado en marcas OSC 133 o en el proceso en primer plano.
 - El anillo animado de la terminal (`.terminal-container.cli-busy::after`, `style.css` 1276-1310) gira el tono con `--terminal-ring-hue`, en un ciclo de 8 s entre 190 y 300.
-- Las sesiones de Claude y Codex añaden `.terminal-container.cli-session` (`session.type !== 'terminal'`). Esa clase oculta la barra del viewport de xterm (`style.css` ~1333-1342) con `scrollbar-width: none`. La rueda sigue desplazando el historial porque `overflow-y` sigue en `scroll`. En la vista de cuadrícula, `#terminals.grid-layout` oculta su propia barra (`scrollbar-width: none`) si hay al menos una tarjeta `cli-session` (`#terminals.grid-layout:has(.cli-session)`, `style.css` ~1515-1520). Las TUI de Claude y Codex tienen su propio scroll, así que la barra de la cuadrícula sobra. Si solo hay terminales simples, la barra se conserva. Con una mezcla, la barra también se oculta para las terminales simples, pero la rueda sigue funcionando. Queda un hueco de 15px a la derecha porque `@xterm/addon-fit` siempre reserva ese ancho.
+- Las barras de scroll están ocultas en todos los terminales y en la cuadrícula. Hay tres elementos: el `.xterm-viewport` nativo (`scrollbar-width: none`, `style.css` ~1311-1319), la barra superpuesta de xterm 6 (`.xterm-scrollable-element > .scrollbar`, también ~1311-1319) y `#terminals.grid-layout` (~1501-1512). La rueda sigue desplazando el historial (verificado con un evento de rueda real, `viewportY` 280 → 276). Queda un hueco de 15px a la derecha porque `@xterm/addon-fit` siempre reserva ese ancho.
 - Al pasar de ocupada a libre, la sesión se reordena automáticamente en la barra lateral.
 - Notificación del sistema (`main.js` ~953-977): se muestra en la transición ocupada→libre. Se suprime solo si la ventana tiene foco **y** la sesión que terminó es la activa.
 

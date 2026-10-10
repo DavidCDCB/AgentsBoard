@@ -394,7 +394,6 @@ function createTerminalEntry(session) {
   const { sessionId } = session;
   const container = document.createElement('div');
   container.className = 'terminal-container';
-  container.classList.toggle('cli-session', session.type !== 'terminal');
   container.classList.toggle('cli-busy', sessionBusyState.get(sessionId) === true);
   terminalsEl.appendChild(container);
 
