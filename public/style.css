@@ -1261,6 +1261,11 @@ body { display: flex; flex-direction: column; }
   display: block;
 }
 
+/* FitAddon subtracts this padding from the columns, so the busy ring never touches the last column. */
+.terminal-container .xterm {
+  padding-right: 4px;
+}
+
 .terminal-container.drag-over {
   outline: 2px solid rgba(128, 136, 255, 0.6);
   outline-offset: -2px;

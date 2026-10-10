@@ -441,6 +441,8 @@ function createTerminalEntry(session) {
     scrollback: 10000,
     convertEol: true,
     allowProposedApi: true,
+    // FitAddon reserves overviewRuler.width (14px by default) on the right; 1px keeps the gap small.
+    overviewRuler: { width: 1 },
     // A TUI that turns on full mouse tracking (CSI ?1003h) makes xterm forward every
     // drag to the application, so normal text selection is dead. Terminal.app and
     // iTerm2 let you hold Option to override that; xterm.js requires opting in.
