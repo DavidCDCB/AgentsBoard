@@ -439,6 +439,9 @@ function createTerminalEntry(session) {
     theme: TERMINAL_THEME,
     cursorBlink: false,
     scrollback: 10000,
+    // FitAddon reserves overviewRuler.width px on the right for a scrollbar we hide.
+    // 0 falls back to its 14px default, so 1 is the smallest value that removes the gap.
+    overviewRuler: { width: 1 },
     convertEol: true,
     allowProposedApi: true,
     // A TUI that turns on full mouse tracking (CSI ?1003h) makes xterm forward every
