@@ -81,7 +81,7 @@ Tres capas de Electron más un worker y los harnesses:
 | `style.css` | Estilos, incluido el anillo de sesión ocupada (`.terminal-container.cli-busy::after`). |
 | `app.js` | Orquestación. `setActivity` (187-220), `renderDefaultStatus` (1152), enlace de GitHub `status-bar-repo` (1175), `confirmAndStopSession` (623). |
 | `sidebar.js` | Barra lateral: proyectos, sesiones, botones de agregar y quitar directorio, y detener sesión. |
-| `terminal-manager.js` | Terminales embebidas. `createTerminalEntry` (~393), sincronización de `cli-busy` (~397), `persistedTerminalRecord` (291) y repintado al hacer clic (500). |
+| `terminal-manager.js` | Terminales embebidas. `createTerminalEntry` (~393), sincronización de `cli-busy` (~397), `persistedTerminalRecord` (291) y repintado al hacer clic o scroll (~500). |
 | `grid-view.js` | Vista en cuadrícula de sesiones. |
 | `settings-panel.js`, `dialogs.js`, `context-menu.js` | Ajustes, diálogos y menús contextuales. |
 | `session-config.js`, `session-config-form.js` | Configuración de nueva sesión. |
@@ -144,7 +144,7 @@ Eventos hacia el renderer (`preload.js`, métodos `on*`): `onTerminalData`, `onS
 ### Letras congeladas en la terminal
 
 - Síntoma: en Claude Code algunas letras quedan sin pintar hasta que se seleccionan. **La causa no está confirmada.** Un repro aislado con xterm.js 6.0.0 y `@xterm/addon-webgl` 0.19.0 no lo reprodujo.
-- Workaround: al hacer mousedown en el contenedor se llama `terminal.refresh(0, terminal.rows - 1)` (`terminal-manager.js` 500). No está verificado contra una sesión real de Claude Code.
+- Workaround: al hacer mousedown en el contenedor, o al hacer scroll (`onScroll`, coalescido por frame), se llama `terminal.refresh(0, terminal.rows - 1)` (`terminal-manager.js` ~500-512). No está verificado contra una sesión real de Claude Code.
 - El addon WebGL se carga en `createTerminalEntry` (`terminal-manager.js` ~491). Si se pierde el contexto WebGL, el addon se desecha y xterm usa el renderer DOM: más CPU, casi el mismo aspecto.
 
 ### Margen superior de la terminal

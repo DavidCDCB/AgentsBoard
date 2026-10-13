@@ -497,9 +497,19 @@ function createTerminalEntry(session) {
     console.warn('[terminal] WebGL addon failed, falling back to DOM renderer', e);
   }
 
-  // Clicking forces a full repaint: rows xterm left stale during synchronized
-  // (DEC 2026) output redraw as soon as the user interacts with them.
-  container.addEventListener('mousedown', () => terminal.refresh(0, terminal.rows - 1), { passive: true });
+  // Clicking and scrolling force a full repaint: rows xterm left stale during
+  // synchronized (DEC 2026) output redraw as soon as the user interacts with them.
+  // Scroll repaints are coalesced to one per frame, since output also scrolls.
+  const repaintAll = () => terminal.refresh(0, terminal.rows - 1);
+  container.addEventListener('mousedown', repaintAll, { passive: true });
+  let scrollRepaintFrame = 0;
+  terminal.onScroll(() => {
+    if (scrollRepaintFrame) return;
+    scrollRepaintFrame = requestAnimationFrame(() => {
+      scrollRepaintFrame = 0;
+      if (container.isConnected) repaintAll();
+    });
+  });
 
   // --- Terminal search bar (Cmd/Ctrl+F) ---
   const searchBar = document.createElement('div');
