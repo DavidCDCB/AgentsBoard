@@ -439,7 +439,10 @@ function createTerminalEntry(session) {
     theme: TERMINAL_THEME,
     cursorBlink: true,
     scrollback: 10000,
-    convertEol: true,
+    // Must stay off: a PTY already sends CR itself, and Claude Code moves down a
+    // row with a bare LF that keeps the column (e.g. "ESC[32;3H ... \n❯ /dataviz").
+    // Turning LF into CRLF lands those redraws at column 0, garbling the screen.
+    convertEol: false,
     allowProposedApi: true,
     // FitAddon reserves overviewRuler.width (14px by default) on the right; 1px keeps the gap small.
     overviewRuler: { width: 1 },

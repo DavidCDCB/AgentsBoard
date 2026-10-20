@@ -141,10 +141,12 @@ Eventos hacia el renderer (`preload.js`, métodos `on*`): `onTerminalData`, `onS
 
 - La barra superior de la terminal se eliminó en `139b2ce`. Detener una sesión queda en la barra lateral (`sidebar.js`, ~633) y en la cuadrícula (`grid-view.js`). Ambas llaman a `confirmAndStopSession` (`app.js` 623).
 
-### Letras congeladas en la terminal
+### Letras corruptas o restos en la terminal
 
-- Síntoma: en Claude Code algunas letras quedan sin pintar hasta que se seleccionan. **La causa no está confirmada.** Un repro aislado con xterm.js 6.0.0 y `@xterm/addon-webgl` 0.19.0 no lo reprodujo.
-- Workaround: al hacer mousedown en el contenedor, o al hacer scroll (`onScroll`, coalescido por frame), se llama `terminal.refresh(0, terminal.rows - 1)` (`terminal-manager.js` ~500-512). No está verificado contra una sesión real de Claude Code.
+- Síntoma: en Claude Code quedan letras desplazadas o restos de menús anteriores (por ejemplo, `❯` o `/add-dir` en las primeras columnas). En una terminal independiente no pasa.
+- Causa (reproducida con un PTY real y xterm headless 6.0.0): xterm tenía `convertEol: true`. Claude Code baja de fila con un `\n` sin `\r` que conserva la columna (`ESC[32;3H … \n❯ /dataviz`). Con `convertEol` ese texto caía en la columna 0, y las actualizaciones parciales siguientes del CLI quedaban 2 columnas corridas. Los restos estaban en el buffer de xterm, no eran un fallo de pintado WebGL. Corregido con `convertEol: false` (`terminal-manager.js` ~442). Todo lo que la app escribe por su cuenta ya usa `\r\n`.
+- `terminal.refresh(0, terminal.rows - 1)` al hacer mousedown o scroll (`terminal-manager.js` ~500-512) es un workaround anterior. Con el renderer WebGL no corrige celdas obsoletas, porque `_updateModel` salta las celdas cuyo modelo en caché no cambió.
+- Diagnóstico: con `SWITCHBOARD_PTY_TRACE=<carpeta>`, `main.js` guarda en JSONL la salida cruda de cada PTY y cada resize (`src`: `renderer` o `nudge`). Así se puede reproducir el fallo en `@xterm/headless` sin Electron.
 - El addon WebGL se carga en `createTerminalEntry` (`terminal-manager.js` ~491). Si se pierde el contexto WebGL, el addon se desecha y xterm usa el renderer DOM: más CPU, casi el mismo aspecto.
 
 ### Margen superior de la terminal
@@ -219,7 +221,7 @@ Atajo para el instalador: `powershell -ExecutionPolicy Bypass -File scripts\buil
 - Comentario desactualizado en `session-cache.js:8` ("Only Claude sessions are indexed today"). Codex ya se indexa cuando `available()` lo permite (`harnesses/index.js`, `harnesses/codex.js:107`).
 - La regla de quitar directorios no se valida en el backend (sección 6).
 - Las notificaciones y el anillo ocupado no se han verificado con una sesión real de Claude.
-- Letras congeladas en la terminal de Claude Code: causa no confirmada. Ver sección 6.
+- Letras corruptas en la terminal de Claude Code: corregido con `convertEol: false` (sección 6). Pendiente confirmarlo en uso real.
 - Margen superior de la terminal: pendiente confirmar si se quiere el margen de 8px de `af7f584`, revertido por `9a7f56d`.
 - Hallazgos sobre el CLI de Claude Code (variables de entorno, transcripciones `.orphaned-*`, colisiones de carpeta, título desactivado, retención, fork con worktree): ver sección 11.6.
 

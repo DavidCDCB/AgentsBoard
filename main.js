@@ -56,6 +56,15 @@ const claudeHarness = getHarness(DEFAULT_HARNESS);
 const PROJECTS_DIR = claudeHarness.sessionsRoot();
 const MAX_BUFFER_SIZE = 256 * 1024;
 
+// Debugging aid: with SWITCHBOARD_PTY_TRACE=<dir>, each session's raw PTY output
+// and every resize are appended to <dir>/<sessionId>-<ms>.jsonl, so a rendering
+// glitch can be replayed outside the app.
+const PTY_TRACE_DIR = process.env.SWITCHBOARD_PTY_TRACE || null;
+function tracePty(session, record) {
+  if (!session._traceFile) return;
+  try { fs.appendFileSync(session._traceFile, JSON.stringify({ t: Date.now(), ...record }) + '\n'); } catch {}
+}
+
 // Active PTY sessions
 const activeSessions = new Map();
 let mainWindow = null;
@@ -146,6 +155,11 @@ function createWindow() {
     const key = input.key.toLowerCase();
     if (key === 'r' && input.meta) event.preventDefault();
     if (key === 'r' && input.control && input.shift) event.preventDefault();
+    // DevTools shortcuts came from the removed app menu, so wire them up here.
+    if (key === 'f12' || (key === 'i' && input.shift && (input.control || input.meta))) {
+      event.preventDefault();
+      mainWindow.webContents.toggleDevTools();
+    }
   });
 
   // Save window bounds on move/resize (debounced)
@@ -729,9 +743,17 @@ ipcMain.handle('open-terminal', async (_event, sessionId, projectPath, isNew, se
   };
   activeSessions.set(sessionId, session);
   if (session.activity) startTerminalActivitySweep();
+  if (PTY_TRACE_DIR) {
+    try {
+      fs.mkdirSync(PTY_TRACE_DIR, { recursive: true });
+      session._traceFile = path.join(PTY_TRACE_DIR, `${sessionId}-${Date.now()}.jsonl`);
+      tracePty(session, { k: 'spawn', cols: 120, rows: 30 });
+    } catch {}
+  }
 
   ptyProcess.onData(data => {
     const currentId = session.realSessionId || sessionId;
+    tracePty(session, { k: 'o', d: data });
 
     // Prompt marks for a plain terminal. Cheap on every chunk: the parse
     // returns immediately unless the chunk actually contains an OSC 133.
@@ -916,6 +938,7 @@ ipcMain.on('terminal-resize', (_event, sessionId, cols, rows) => {
     if (session.isPlainTerminal) session._suppressBuffer = true;
 
     session.pty.resize(cols, rows);
+    tracePty(session, { k: 'r', cols, rows, src: 'renderer' });
 
     if (session.isPlainTerminal) {
       setTimeout(() => { session._suppressBuffer = false; }, 200);
@@ -927,8 +950,9 @@ ipcMain.on('terminal-resize', (_event, sessionId, cols, rows) => {
       setTimeout(() => {
         try {
           session.pty.resize(cols + 1, rows);
+          tracePty(session, { k: 'r', cols: cols + 1, rows, src: 'nudge' });
           setTimeout(() => {
-            try { session.pty.resize(cols, rows); } catch {}
+            try { session.pty.resize(cols, rows); tracePty(session, { k: 'r', cols, rows, src: 'nudge' }); } catch {}
           }, 50);
         } catch {}
       }, 50);
